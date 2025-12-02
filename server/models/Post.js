@@ -1,5 +1,3 @@
-// Post.js - Mongoose model for blog posts
-
 const mongoose = require('mongoose');
 
 const PostSchema = new mongoose.Schema(
@@ -16,11 +14,10 @@ const PostSchema = new mongoose.Schema(
     },
     featuredImage: {
       type: String,
-      default: 'default-post.jpg',
+      default: 'https://via.placeholder.com/600x400',
     },
     slug: {
       type: String,
-      required: true,
       unique: true,
     },
     excerpt: {
@@ -35,13 +32,8 @@ const PostSchema = new mongoose.Schema(
     category: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Category',
-      required: true,
     },
     tags: [String],
-    isPublished: {
-      type: Boolean,
-      default: false,
-    },
     viewCount: {
       type: Number,
       default: 0,
@@ -66,35 +58,28 @@ const PostSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Create slug from title before saving
-PostSchema.pre('save', function (next) {
+PostSchema.pre('save', async function() {
+  // If title hasn't changed, do nothing
   if (!this.isModified('title')) {
-    return next();
+    return;
   }
   
+  // Generate the slug
   this.slug = this.title
     .toLowerCase()
-    .replace(/[^\w ]+/g, '')
-    .replace(/ +/g, '-');
-    
-  next();
+    .replace(/[^\w ]+/g, '') 
+    .replace(/ +/g, '-');   
 });
 
-// Virtual for post URL
-PostSchema.virtual('url').get(function () {
-  return `/posts/${this.slug}`;
-});
-
-// Method to add a comment
+// Helper methods
 PostSchema.methods.addComment = function (userId, content) {
   this.comments.push({ user: userId, content });
   return this.save();
 };
 
-// Method to increment view count
 PostSchema.methods.incrementViewCount = function () {
   this.viewCount += 1;
   return this.save();
 };
 
-module.exports = mongoose.model('Post', PostSchema); 
+module.exports = mongoose.model('Post', PostSchema);
